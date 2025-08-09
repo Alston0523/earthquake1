@@ -1,6 +1,13 @@
+import subprocess
+import sys
+
+# Install requirements.txt packages if not already installed
+subprocess.check_call([sys.executable, "-m", "pip", "install", "-r", "requirements.txt"])
+
 import streamlit as st
 import numpy as np
 from joblib import load
+
 
 # Load the trained model
 model = load('linear_regression_model.joblib')
