@@ -1,4 +1,6 @@
-streamlit
+folium
+streamlit-folium
+reverse_geocode
 joblib
+pandas
 numpy
-scikit-learn
