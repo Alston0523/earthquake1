@@ -1,33 +1,88 @@
 import subprocess
 import sys
 
-# Install requirements.txt packages if not already installed
-subprocess.check_call([sys.executable, "-m", "pip", "install", "-r", "requirements.txt"])
-
 import streamlit as st
-import numpy as np
+import folium
+from streamlit_folium import st_folium
 from joblib import load
+import numpy as np
+import reverse_geocode as rg
 
-
-# Load the trained model
+# Load trained model
 model = load('linear_regression_model.joblib')
 
-st.title("🌍 Earthquake Significance Prediction")
+# Function to get country from lat/lon
+def get_country(lat, lon):
+    result = rg.get((lat, lon))
+    return result['country']
 
-# User input
-user_input = st.number_input("Enter Significance Value", min_value=0.0, step=1.0)
+st.title("🌍 Earthquake Prediction System")
 
-if st.button("Predict"):
-    if user_input < 650:
-        st.success(f"Significance: {user_input}\n✅ Status: Normal")
-    elif user_input > 2910:
-        st.warning(f"Significance: {user_input}\n❓ Status: Unpredictable")
-    else:
-        # Prepare input for prediction
-        input_array = np.array([user_input]).reshape(-1, 1)
-        predicted_magnitude = model.predict(input_array)
-        pred_value = float(predicted_magnitude.flatten()[0])
+# --- Step 1: Create interactive map ---
+st.subheader("Click on the map to select location")
 
-        st.info(f"Significance: {user_input}")
-        st.write(f"Predicted Magnitude: **{pred_value:.2f}**")
-        st.error("Status: Significant")
+m = folium.Map(location=[0, 0], zoom_start=2)
+
+# Add click handler
+m.add_child(folium.LatLngPopup())
+
+map_data = st_folium(m, width=700, height=500)
+
+# --- Step 2: Show clicked coordinates ---
+if map_data and map_data["last_clicked"]:
+    latitude = map_data["last_clicked"]["lat"]
+    longitude = map_data["last_clicked"]["lng"]
+
+    st.success(f"📍 Selected Location: ({latitude:.4f}, {longitude:.4f})")
+    
+    # Get earthquake parameters from user
+    sig = st.number_input("Enter significance:", min_value=0.0, step=1.0)
+    depth = st.number_input("Enter depth (km):", min_value=0.0, step=0.1)
+    gap = st.number_input("Enter gap (degrees):", min_value=0.0, step=0.1)
+
+    if st.button("Predict Earthquake Magnitude"):
+        # --- Significance check ---
+        if sig < 650:
+            sig_status = "Normal"
+        elif sig > 2910:
+            sig_status = "Unpredictable"
+        else:
+            sig_status = "Within prediction range"
+
+        # --- Depth check ---
+        if depth < 2.6:
+            depth_status = "Normal (low impact)"
+        elif depth > 671:
+            depth_status = "Unpredictable depth"
+        elif depth <= 70:
+            depth_status = "Shallow (more dangerous)"
+        else:
+            depth_status = "Deep (less surface impact)"
+
+        # --- Gap check ---
+        if gap <= 90:
+            gap_status = "Highly reliable location (very significant)"
+        elif gap <= 180:
+            gap_status = "Reliable location (significant)"
+        elif gap <= 270:
+            gap_status = "Low reliability (less significant)"
+        else:
+            gap_status = "Unreliable location estimate (low significance)"
+
+        # --- Prediction ---
+        if sig_status == "Within prediction range" and "Unpredictable" not in depth_status:
+            input_array = np.array([[sig, depth, gap, latitude, longitude]])
+            predicted_magnitude = model.predict(input_array)
+            pred_value = float(predicted_magnitude.flatten()[0])
+
+            st.subheader("🔍 Earthquake Prediction Result")
+            st.write(f"**Significance:** {sig} → {sig_status}")
+            st.write(f"**Depth:** {depth} km → {depth_status}")
+            st.write(f"**Gap:** {gap}° → {gap_status}")
+            st.write(f"**Location:** ({latitude}, {longitude}), {get_country(latitude, longitude)}")
+            st.success(f"**Predicted Magnitude:** {pred_value:.2f}")
+        else:
+            st.warning("Prediction skipped due to out-of-range values.")
+else:
+    st.info("Click anywhere on the map to select a location.")
+
