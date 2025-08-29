@@ -31,9 +31,9 @@ if map_data and map_data["last_clicked"]:
     st.success(f"📍 Selected Location: ({latitude:.4f}, {longitude:.4f})")
 
     # Step 3: Get earthquake parameters as text inputs
-    sig_input = st.text_input("Enter significance:", placeholder="Enter significance")
-    depth_input = st.text_input("Enter depth (km):", placeholder="Enter depth")
-    gap_input = st.text_input("Enter gap (degrees):", placeholder="Enter gap")
+    sig_input = st.text_input("Enter significance [1 - 2910]:", placeholder="Enter significance")
+    depth_input = st.text_input("Enter depth (km) [1.0 - 671.0]:", placeholder="Enter depth")
+    gap_input = st.text_input("Enter gap (degrees) [0 -365]:", placeholder="Enter gap")
 
     # Step 4: Predict button
     if st.button("Predict Earthquake Magnitude"):
@@ -94,4 +94,5 @@ if map_data and map_data["last_clicked"]:
             st.warning("Prediction skipped due to out-of-range values.")
 else:
     st.info("Click anywhere on the map to select a location.")
+
 
