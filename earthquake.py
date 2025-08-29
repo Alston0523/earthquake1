@@ -76,7 +76,7 @@ if map_data and map_data["last_clicked"]:
             gap_status = "Unreliable location estimate (low significance)"
 
         # --- Prediction ---
-        if sig_status == "Within prediction range" and "Unpredictable" not in depth_status:
+        if  "Unpredictable" not in sig_status and "Unpredictable" not in depth_status and "Unreliable" not in gap_status:
             try:
                 input_array = np.array([[sig, depth, gap, latitude, longitude]])
                 predicted_magnitude = model.predict(input_array)
@@ -94,3 +94,4 @@ if map_data and map_data["last_clicked"]:
             st.warning("Prediction skipped due to out-of-range values.")
 else:
     st.info("Click anywhere on the map to select a location.")
+
