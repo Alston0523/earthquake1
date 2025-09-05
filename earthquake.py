@@ -33,7 +33,7 @@ if map_data and map_data["last_clicked"]:
     # Step 3: Get earthquake parameters as text inputs
     sig_input = st.text_input("Enter significance [1 - 2910]:", placeholder="Enter significance")
     depth_input = st.text_input("Enter depth (km) [1.0 - 671.0]:", placeholder="Enter depth")
-    gap_input = st.text_input("Enter gap (degrees) [0 -365]:", placeholder="Enter gap")
+    gap_input = st.text_input("Enter gap (degrees) [0 - 365]:", placeholder="Enter gap")
 
     # Step 4: Predict button
     if st.button("Predict Earthquake Magnitude"):
@@ -45,7 +45,18 @@ if map_data and map_data["last_clicked"]:
             gap = float(gap_input)
         except ValueError:
             st.error("⚠️ Please enter valid numbers for significance, depth, and gap.")
-            st.stop()  # Stop execution until corrected
+            st.stop()
+
+        # --- Zero check (sig & depth cannot be zero, gap can be zero) ---
+        if sig == 0 and depth == 0:
+            st.error("⚠️ Invalid input: Significance and depth cannot both be zero.")
+            st.stop()
+        elif sig == 0:
+            st.error("⚠️ Invalid input: Significance cannot be zero.")
+            st.stop()
+        elif depth == 0:
+            st.error("⚠️ Invalid input: Depth cannot be zero.")
+            st.stop()
 
         # --- Significance check ---
         if sig < 650:
@@ -65,7 +76,7 @@ if map_data and map_data["last_clicked"]:
         else:
             depth_status = "Deep (less surface impact)"
 
-        # --- Gap check ---
+        # --- Gap check (0 is valid here) ---
         if gap <= 90:
             gap_status = "Highly reliable location (very significant)"
         elif gap <= 180:
@@ -76,7 +87,7 @@ if map_data and map_data["last_clicked"]:
             gap_status = "Unreliable location estimate (low significance)"
 
         # --- Prediction ---
-        if  "Unpredictable" not in sig_status and "Unpredictable" not in depth_status and "Unreliable" not in gap_status:
+        if "Unpredictable" not in sig_status and "Unpredictable" not in depth_status and "Unreliable" not in gap_status:
             try:
                 input_array = np.array([[sig, depth, gap, latitude, longitude]])
                 predicted_magnitude = model.predict(input_array)
@@ -94,5 +105,3 @@ if map_data and map_data["last_clicked"]:
             st.warning("Prediction skipped due to out-of-range values.")
 else:
     st.info("Click anywhere on the map to select a location.")
-
-
